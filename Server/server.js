@@ -25,12 +25,12 @@ io.on("connection", (socket) => {
   socket.on("createMessage", (message, callback) => {
     console.log("createMessage", message);
     io.emit("newMessage", generateMessage(message.from, message.text));
-    // callback('This is Sever');
+    callback('This is Sever');
   });
 
   socket.on("createLocationMessage", (coords) => {
     io.emit(
-      "newMessage",
+      "newLocationMessage",
       generateLocationMessage("Admin", coords.lat, coords.lng)
     );
   });
