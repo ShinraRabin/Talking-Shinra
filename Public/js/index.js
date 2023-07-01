@@ -3,10 +3,7 @@ let socket = io();
 socket.on("connect", () => {
   console.log("connected to server");
 
-  // socket.emit('createMessage', {
-  //     from:"Shinra",
-  //     text:"ola baby!"
-  // })
+
 });
 
 socket.on("disconnect", () => {
@@ -14,9 +11,10 @@ socket.on("disconnect", () => {
 });
 
 socket.on("newMessage", function (message) {
+  const formattedTime = moment(message.createdAt).format('LT')
   console.log("newMessage", message);
   let li = document.createElement('li');
-  li.innerText = `${message.from}: ${message.text}`
+  li.innerText = `${message.from} ${formattedTime}: ${message.text}`
 
   
 
@@ -24,9 +22,11 @@ document.querySelector('body').appendChild(li);
 });
 
 socket.on("newLocationMessage", function (message) {
+  const formattedTime = moment(message.createdAt).format('LT')
   console.log("newLocationMessage", message);
   let li = document.createElement('li');
   let a = document.createElement('a');
+  li.innerText = `${message.from} ${formattedTime}`
   a.setAttribute('target', '_blank');
   a.setAttribute('href', message.url);
   a.innerText = 'My current Location';
