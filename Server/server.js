@@ -47,6 +47,8 @@ app.get("/login", (req, res) => {
 io.on("connection", (socket) => {
   console.log("A client is Connected");
 
+  // connectedClients.push(socket);
+
   // socket.emit("newMessage", generateMessage("Admin", '"Welcome to the chat!'));
 
   // socket.broadcast.emit(
@@ -55,54 +57,49 @@ io.on("connection", (socket) => {
   // );
   
   // Store the connected client
-  socket.on('storeClientInfo', (userData) => {
-    const { username } = userData;
-    connectedClients[username] = socket;
-    console.log(`${username} connected`);
-  });
-  
-
-  socket.on('message',(data) =>{
-    const {sender, receiver,message} = data;
-
-    connecttion.query('INSERT INTO messages (sender, receiver, message) VALUES (?, ?, ?)',
-    [sender, receiver, message],
-    (err) =>{if (err) throw err;
-
-      const recepientSocket = connectedClients[receiver];
-      if(recepientSocket) {
-        recepientSocket.emit('message', data);
-      }
-
-    }
-    );
-  });
-
-  // socket.on("createMessage", (message, callback) => {
-  //   console.log("createMessage", message);
-  //   io.emit("newMessage", generateMessage(message.from, message.text));
-  //   callback('This is Sever');
+  // socket.on('storeClientInfo', (userData) => {
+  //   const { username } = userData;
+  //   connectedClients[username] = socket;
+  //   console.log(`${username} connected`);
   // });
+  socket.on('join',(params, callback) =>{
+    
+  })
 
-  // socket.on("createLocationMessage", (coords) => {
-  //   io.emit(
-  //     "newLocationMessage",
-  //     generateLocationMessage("Admin", coords.lat, coords.lng)
+  // socket.on('message',(data) =>{
+  //   const {sender, receiver,message} = data;
+
+  //   connecttion.query('INSERT INTO messages (sender, receiver, message) VALUES (?, ?, ?)',
+  //   [sender, receiver, message],
+  //   (err) =>{if (err) throw err;
+
+  //     const recepientSocket = connectedClients[receiver];
+  //     if(recepientSocket) {
+  //       recepientSocket.emit('message', data);
+  //     }
+
+  //   }
   //   );
   // });
 
-  // socket.on("disconnect", () => {
-  //   console.log("User was disconnected");
-  // });
-  socket.on('disconnect', () => {
-    const disconnectedUser = Object.keys(connectedClients).find(
-      (key) => connectedClients[key] === socket
-    );
+  socket.on("createMessage", (message, callback) => {
+    console.log("createMessage", message);
+    io.emit("newMessage", generateMessage(message.from, message.text));
+    callback('This is Sever');
+  });
 
-    if (disconnectedUser) {
-      delete connectedClients[disconnectedUser];
-      console.log(`${disconnectedUser} disconnected`);
-    }
+  socket.on("createLocationMessage", (coords) => {
+    io.emit(
+      "newLocationMessage",
+      generateLocationMessage("Admin", coords.lat, coords.lng)
+    );
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User was disconnected");
+  });
+  socket.on('disconnect', () => {
+   console.log("disconnect from user")
   });
 });
 

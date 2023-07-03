@@ -7,7 +7,17 @@ function scrollToBottom(){
 }
 
 socket.on("connect", () => {
-  console.log("connected to server");
+  let params = JSON.parse('{"' + decodeURI(searchQuery).replace(/&/g, '","').replace(/\+/g, ' ').replace(/=/g,'":"') + '"}');
+
+  socket.emit('join', params, function(err){
+    if(err){
+      alert('input feild must be valid');
+      window.location.href="/"
+    }else{
+      console.log("No error");
+    }
+  })
+
 });
 
 socket.on("disconnect", () => {
@@ -45,16 +55,6 @@ socket.on("newLocationMessage", function (message) {
 
   document.querySelector("#messages").appendChild(div);
 
-  // console.log("newLocationMessage", message);
-  // let li = document.createElement('li');
-  // let a = document.createElement('a');
-  // li.innerText = `${message.from} ${formattedTime}`
-  // a.setAttribute('target', '_blank');
-  // a.setAttribute('href', message.url);
-  // a.innerText = 'My current Location';
-  // li.appendChild(a);
-
-  // document.querySelector('body').appendChild(li);
 });
 
 document.querySelector("#submit-btn").addEventListener("click", function (e) {
@@ -93,3 +93,6 @@ document
       }
     );
   });
+
+
+
