@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat App</title>
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+  </head>
+  <body>
+    <h1>Chat App</h1>
+
+    <h2>Users</h2>
+    <ul>
+      {{#users}}
+      <li>
+        <span>{{username}}</span>
+        <form
+          action="/send-request/{{username}}"
+          method="POST"
+          style="display: inline"
+        >
+          <button type="submit">Send Request</button>
+        </form>
+      </li>
+      {{/users}}
+    </ul>
+
+    <h2>Friend Requests</h2>
+    <ul>
+      {{#requests}}
+      <li>
+        <span>{{sender}}</span>
+        <form
+          action="/accept-request/{{sender}}"
+          method="POST"
+          style="display: inline"
+        >
+          <button type="submit">Accept</button>
+        </form>
+        <form
+          action="/reject-request/{{sender}}"
+          method="POST"
+          style="display: inline"
+        >
+          <button type="submit">Reject</button>
+        </form>
+      </li>
+      {{/requests}}
+    </ul>
+
+    <h2>Chat</h2>
+    <!-- ... -->
+    <h2>Chat</h2>
+    <ul>
+      {{#friends}}
+      <li>{{username}}</li>
+      {{/friends}}
+    </ul>
+    <form action="/send-message" method="POST">
+      <input type="text" name="message" placeholder="Message" required />
+      <button type="submit">Send</button>
+    </form>
+    <!-- ... -->
+  </body>
+</html>
