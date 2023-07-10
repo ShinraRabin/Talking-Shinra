@@ -1,112 +1,68 @@
-const path = require("path");
-const htpp = require("http");
-const express = require("express");
-const authRoute = require("./routes/authRote")
-const socketIO = require("socket.io");
+const path = require('path');
+const http = require('http');
+const express = require('express');
+const socketIO = require('socket.io');
 
-const { generateMessage, generateLocationMessage } = require("./utills/message");
-const publicpath = path.join(__dirname, "/../public");
-const crypto = require("crypto");
-const cors = require("cors");
+const {generateMessage, generateLocationMessage} = require('./utills/message');
+const {isRealString} = require('./utills/isRealString');
+const {Users} = require('./utills/users');
 
-const secretKey = crypto.randomBytes(16).toString("hex");
-
-const corsOptions = {
-  origin: "*",
-  credentials: true,
-  optionsSuccessStatus: 200,
-};
-
-
-
-const db = require("../Public/js/index");
-const { connected } = require("process");
-db.sequelize.sync({ force: false });
-const port = process.env.PORT || 3000;
+const publicPath = path.join(__dirname, '/../public');
+const port = process.env.PORT || 3000
 let app = express();
-let server = htpp.createServer(app);
+let server = http.createServer(app);
 let io = socketIO(server);
+let users = new Users();
 
-app.use(express.static(publicpath));
+app.use(express.static(publicPath));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+io.on('connection', (socket) => {
+  console.log("A new user just connected");
 
+  socket.on('join', (params, callback) => {
+    if(!isRealString(params.name) || !isRealString(params.room)){
+      return callback('Name and room are required');
+    }
 
+    socket.join(params.room);
+    users.removeUser(socket.id);
+    users.addUser(socket.id, params.name, params.room);
 
-app.get("/room", (req, res) => {
-  res.sendFile(path.join(publicpath, 'room.html'));
-});
+    io.to(params.room).emit('updateUsersList', users.getUserList(params.room));
+    socket.emit('newMessage', generateMessage('Admin', `Welocome to ${params.room}!`));
 
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(publicpath, 'login.html'));
-});
+    socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', "New User Joined!"));
 
-
-
-io.on("connection", (socket) => {
-  console.log("A client is Connected");
-
-  // connectedClients.push(socket);
-
-  // socket.emit("newMessage", generateMessage("Admin", '"Welcome to the chat!'));
-
-  // socket.broadcast.emit(
-  //   "newMessage",
-  //   generateMessage("Admin", "New user joined!")
-  // );
-  
-  // Store the connected client
-  // socket.on('storeClientInfo', (userData) => {
-  //   const { username } = userData;
-  //   connectedClients[username] = socket;
-  //   console.log(`${username} connected`);
-  // });
-  socket.on('join',(params, callback) =>{
-    
+    callback();
   })
 
-  // socket.on('message',(data) =>{
-  //   const {sender, receiver,message} = data;
+  socket.on('createMessage', (message, callback) => {
+    let user = users.getUser(socket.id);
 
-  //   connecttion.query('INSERT INTO messages (sender, receiver, message) VALUES (?, ?, ?)',
-  //   [sender, receiver, message],
-  //   (err) =>{if (err) throw err;
+    if(user && isRealString(message.text)){
+        io.to(user.room).emit('newMessage', generateMessage(user.name, message.text));
+    }
+    callback('This is the server:');
+  })
 
-  //     const recepientSocket = connectedClients[receiver];
-  //     if(recepientSocket) {
-  //       recepientSocket.emit('message', data);
-  //     }
+  socket.on('createLocationMessage', (coords) => {
+    let user = users.getUser(socket.id);
 
-  //   }
-  //   );
-  // });
+    if(user){
+      io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.lat, coords.lng))
+    }
+  })
 
-  socket.on("createMessage", (message, callback) => {
-    console.log("createMessage", message);
-    io.emit("newMessage", generateMessage(message.from, message.text));
-    callback('This is Sever');
-  });
-
-  socket.on("createLocationMessage", (coords) => {
-    io.emit(
-      "newLocationMessage",
-      generateLocationMessage("Admin", coords.lat, coords.lng)
-    );
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User was disconnected");
-  });
   socket.on('disconnect', () => {
-   console.log("disconnect from user")
+    let user = users.removeUser(socket.id);
+
+    if(user){
+      io.to(user.room).emit('updateUsersList', users.getUserList(user.room));
+      io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left ${user.room} chat room.`))
+    }
   });
 });
 
-
-app.use(cors(corsOptions)); 
-app.use("/", authRoute);
-
-server.listen(3000, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-});
+server.listen(port, ()=>{
+  console.log(`Server is up on port ${port}`);
+})
